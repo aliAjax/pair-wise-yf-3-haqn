@@ -1,12 +1,13 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import type { SmellMemory, Season, SmellType, Emotion } from '../utils/constants';
+import type { SmellMemory, Season, SmellType, Emotion, SourceItem } from '../utils/constants';
 import { generateId } from '../utils/helpers';
+import { normalizeMemory } from '../utils/sources';
 import { mockMemories } from '../data/mockData';
 
 export interface MemoryInput {
   location: string;
-  source_guess: string;
+  sources: SourceItem[];
   intensity: number;
   humidity: number;
   season: Season;
@@ -25,6 +26,16 @@ interface MemoryStore {
   initIfEmpty: () => void;
 }
 
+/** 入库前清洗来源清单：剔除空名称、重新编号保证结构合法 */
+function cleanInput(input: MemoryInput): MemoryInput {
+  return {
+    ...input,
+    sources: input.sources
+      .filter((s) => s.name.trim())
+      .map((s) => ({ ...s, name: s.name.trim() })),
+  };
+}
+
 export const useMemoryStore = create<MemoryStore>()(
   persist(
     (set, get) => ({
@@ -33,7 +44,7 @@ export const useMemoryStore = create<MemoryStore>()(
         const now = new Date().toISOString();
         const newMem: SmellMemory = {
           id: generateId(),
-          ...input,
+          ...cleanInput(input),
           created_at: now,
           updated_at: now,
         };
@@ -43,7 +54,7 @@ export const useMemoryStore = create<MemoryStore>()(
         set({
           memories: get().memories.map((m) =>
             m.id === id
-              ? { ...m, ...input, updated_at: new Date().toISOString() }
+              ? { ...m, ...cleanInput(input), updated_at: new Date().toISOString() }
               : m,
           ),
         });
@@ -59,7 +70,30 @@ export const useMemoryStore = create<MemoryStore>()(
     }),
     {
       name: 'scent-memory-storage',
+      version: 2,
       storage: createJSONStorage(() => localStorage),
+      // 旧记录没有来源清单：用原来的来源猜测整句补成单项 100
+      migrate: (persisted: unknown, version: number) => {
+        if (version < 2) {
+          const state = persisted as { memories?: SmellMemory[] } | undefined;
+          if (state && Array.isArray(state.memories)) {
+            return { ...state, memories: state.memories.map((m) => normalizeMemory(m)) };
+          }
+        }
+        return persisted;
+      },
+      // 双保险：即便没有走版本迁移，读取时也对每条记录做一次来源规整
+      merge: (persisted, currentState) => {
+        const state = (persisted ?? {}) as { memories?: SmellMemory[] };
+        if (Array.isArray(state.memories)) {
+          return {
+            ...currentState,
+            ...state,
+            memories: state.memories.map((m) => normalizeMemory(m)),
+          };
+        }
+        return { ...currentState, ...state };
+      },
     },
   ),
 );

@@ -1,7 +1,8 @@
 import type { SmellMemory } from '../utils/constants';
 import { getSeasonInfo, getSmellTypeInfo, getEmotionInfo } from '../utils/constants';
 import { formatDate, contrastTextColor } from '../utils/helpers';
-import { Pencil, Trash2, ChevronDown, ChevronUp, Heart } from 'lucide-react';
+import { getPrimarySource, sortSourcesByConfidence } from '../utils/sources';
+import { Pencil, Trash2, ChevronDown, ChevronUp, Heart, Crown } from 'lucide-react';
 
 interface Props {
   memory: SmellMemory;
@@ -16,6 +17,10 @@ export default function MemoryCard({ memory, index, isExpanded, onToggle, onEdit
   const season = getSeasonInfo(memory.season);
   const stype = getSmellTypeInfo(memory.smell_type);
   const emotion = getEmotionInfo(memory.emotion);
+
+  const primarySource = getPrimarySource(memory.sources);
+  const rankedSources = sortSourcesByConfidence(memory.sources);
+  const otherCount = memory.sources.length - 1;
 
   const intensityWidth = `${memory.intensity * 10}%`;
   const humidityWidth = `${memory.humidity * 10}%`;
@@ -46,7 +51,19 @@ export default function MemoryCard({ memory, index, isExpanded, onToggle, onEdit
                 </h3>
                 <p className="text-sm text-ink-700/70 mt-0.5 truncate">
                   <span className="mr-1" style={{ color: stype.color }}>{stype.emoji}</span>
-                  {memory.source_guess}
+                  {primarySource ? (
+                    <>
+                      {primarySource.name}
+                      <span className="ml-1.5 text-xs text-ochre-600/80 tabular-nums">
+                        {primarySource.confidence}%
+                      </span>
+                      {otherCount > 0 && (
+                        <span className="ml-1 text-xs text-ink-700/45">等 {memory.sources.length} 项</span>
+                      )}
+                    </>
+                  ) : (
+                    <span className="text-ink-700/40">未记录来源</span>
+                  )}
                 </p>
               </div>
               <div
@@ -133,6 +150,44 @@ export default function MemoryCard({ memory, index, isExpanded, onToggle, onEdit
 
           {isExpanded && (
             <div className="px-4 pb-4 animate-expand overflow-hidden">
+              {rankedSources.length > 0 && (
+                <div className="p-4 rounded-xl bg-paper-100/70 border border-paper-200/80 mb-3">
+                  <div className="flex items-center gap-2 mb-2.5">
+                    <span className="font-hand text-lg text-ochre-600">气味来源</span>
+                    <span className="text-[11px] text-ink-700/45">按把握从高到低</span>
+                  </div>
+                  <ul className="space-y-2">
+                    {rankedSources.map((s, i) => {
+                      const isPrimary = i === 0;
+                      return (
+                        <li key={s.id} className="flex items-center gap-2.5">
+                          <span className="w-4 text-center text-[11px] text-ink-700/40 tabular-nums shrink-0">
+                            {i + 1}
+                          </span>
+                          {isPrimary && (
+                            <Crown className="w-3.5 h-3.5 text-ochre-500 shrink-0" />
+                          )}
+                          <span className={`flex-1 min-w-0 truncate text-sm ${isPrimary ? 'font-medium text-ink-800' : 'text-ink-700/80'}`}>
+                            {s.name}
+                          </span>
+                          <span className={`text-xs tabular-nums shrink-0 ${isPrimary ? 'text-ochre-600 font-semibold' : 'text-ink-700/50'}`}>
+                            {s.confidence}%
+                          </span>
+                          <div className="w-20 h-1.5 bg-paper-200 rounded-full overflow-hidden shrink-0">
+                            <div
+                              className="h-full rounded-full"
+                              style={{
+                                width: `${s.confidence}%`,
+                                backgroundColor: isPrimary ? '#8B5A2B' : '#B8A990',
+                              }}
+                            />
+                          </div>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </div>
+              )}
               <div className="p-4 rounded-xl bg-paper-100/70 border border-paper-200/80">
                 <div className="flex items-center gap-2 mb-2">
                   <span className="font-hand text-lg text-ochre-600">关联记忆</span>

@@ -3,6 +3,8 @@ import { X } from 'lucide-react';
 import type { SmellMemory, Season, SmellType, Emotion } from '../utils/constants';
 import { SEASONS, SMELL_TYPES, EMOTIONS } from '../utils/constants';
 import type { MemoryInput } from '../store/memoryStore';
+import SourceListEditor from './SourceListEditor';
+import { createSource, validateSources } from '../utils/sources';
 
 interface Props {
   isOpen: boolean;
@@ -13,7 +15,7 @@ interface Props {
 
 const defaultForm: MemoryInput = {
   location: '',
-  source_guess: '',
+  sources: [createSource('', 100)],
   intensity: 5,
   humidity: 5,
   season: 'autumn',
@@ -29,6 +31,7 @@ const humidityTicks = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
 
 export default function MemoryModal({ isOpen, onClose, onSubmit, editingData }: Props) {
   const [form, setForm] = useState<MemoryInput>(defaultForm);
+  const [sourceError, setSourceError] = useState<string | undefined>(undefined);
   const modalRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -40,6 +43,7 @@ export default function MemoryModal({ isOpen, onClose, onSubmit, editingData }: 
       } else {
         setForm(defaultForm);
       }
+      setSourceError(undefined);
       document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = '';
@@ -60,7 +64,13 @@ export default function MemoryModal({ isOpen, onClose, onSubmit, editingData }: 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.location.trim()) return;
-    onSubmit(form);
+    const filled = form.sources.filter((s) => s.name.trim());
+    const result = validateSources(filled);
+    if (!result.valid) {
+      setSourceError(result.message);
+      return;
+    }
+    onSubmit({ ...form, sources: filled });
     onClose();
   };
 
@@ -115,16 +125,25 @@ export default function MemoryModal({ isOpen, onClose, onSubmit, editingData }: 
                   className="scent-input"
                 />
               </div>
-              <div>
-                <label className="block text-sm font-medium text-ink-700 mb-1.5">气味来源猜测</label>
-                <input
-                  type="text"
-                  value={form.source_guess}
-                  onChange={(e) => update('source_guess', e.target.value)}
-                  placeholder="例如：樟木 + 旧毛衣"
-                  className="scent-input"
-                />
-              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-ink-700 mb-1.5">
+                气味来源清单
+                <span className="ml-2 text-xs font-normal text-ink-700/50">
+                  名称 + 把握程度，卡片上只显示把握最高的一条
+                </span>
+              </label>
+              <SourceListEditor
+                isEditing={!!editingData}
+                initialSources={editingData?.sources ?? []}
+                value={form.sources}
+                onChange={(sources) => {
+                  update('sources', sources);
+                  setSourceError(undefined);
+                }}
+                error={sourceError}
+              />
             </div>
           </div>
 

@@ -1,7 +1,8 @@
 import { useMemo } from 'react';
 import type { SmellMemory } from '../../utils/constants';
-import { getTopIntensityMemories, contrastTextColor } from '../../utils/helpers';
 import { getSeasonInfo, getSmellTypeInfo } from '../../utils/constants';
+import { getTopIntensityMemories, contrastTextColor } from '../../utils/helpers';
+import { getPrimarySource } from '../../utils/sources';
 
 interface Props {
   memories: SmellMemory[];
@@ -24,6 +25,7 @@ export default function TopList({ memories, onSelect }: Props) {
           top5.map((m, idx) => {
             const season = getSeasonInfo(m.season);
             const stype = getSmellTypeInfo(m.smell_type);
+            const primary = getPrimarySource(m.sources);
             return (
               <button
                 key={m.id}
@@ -45,7 +47,9 @@ export default function TopList({ memories, onSelect }: Props) {
                     <span className="text-base">{stype.emoji}</span>
                     <span className="text-sm font-medium text-ink-800 truncate">{m.location}</span>
                   </div>
-                  <div className="text-[11px] text-ink-700/60 truncate">{m.source_guess}</div>
+                  <div className="text-[11px] text-ink-700/60 truncate">
+                    {primary ? `${primary.name} · ${primary.confidence}%` : '未记录来源'}
+                  </div>
                 </div>
                 <div className="flex flex-col items-end">
                   <div className="text-xl font-serif font-bold text-ochre-600 leading-none">
