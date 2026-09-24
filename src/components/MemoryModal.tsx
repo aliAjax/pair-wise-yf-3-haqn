@@ -3,17 +3,19 @@ import { X } from 'lucide-react';
 import type { SmellMemory, Season, SmellType, Emotion } from '../utils/constants';
 import { SEASONS, SMELL_TYPES, EMOTIONS } from '../utils/constants';
 import type { MemoryInput } from '../store/memoryStore';
+import SourceEditor from './SourceEditor';
+import { createSourceItem, canReplaceSources } from '../utils/sources';
 
 interface Props {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (data: MemoryInput) => void;
+  onSubmit: (data: MemoryInput) => boolean;
   editingData: SmellMemory | null;
 }
 
 const defaultForm: MemoryInput = {
   location: '',
-  source_guess: '',
+  sources: [createSourceItem('', 100)],
   intensity: 5,
   humidity: 5,
   season: 'autumn',
@@ -29,6 +31,7 @@ const humidityTicks = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
 
 export default function MemoryModal({ isOpen, onClose, onSubmit, editingData }: Props) {
   const [form, setForm] = useState<MemoryInput>(defaultForm);
+  const [sourceError, setSourceError] = useState<string | null>(null);
   const modalRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -38,8 +41,9 @@ export default function MemoryModal({ isOpen, onClose, onSubmit, editingData }: 
         void id; void created_at; void updated_at;
         setForm(rest);
       } else {
-        setForm(defaultForm);
+        setForm({ ...defaultForm, sources: [createSourceItem('', 100)] });
       }
+      setSourceError(null);
       document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = '';
@@ -60,8 +64,14 @@ export default function MemoryModal({ isOpen, onClose, onSubmit, editingData }: 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.location.trim()) return;
-    onSubmit(form);
-    onClose();
+    // 保存规则：最多四项、名称非空、合计 100；已确认主来源移除前须由另一条接手
+    const check = canReplaceSources(editingData?.sources, form.sources);
+    if (check.valid === false) {
+      setSourceError(check.error);
+      return;
+    }
+    setSourceError(null);
+    if (onSubmit(form)) onClose();
   };
 
   if (!isOpen) return null;
@@ -103,7 +113,7 @@ export default function MemoryModal({ isOpen, onClose, onSubmit, editingData }: 
               <span className="w-1.5 h-6 bg-ochre-500 rounded-full" />
               <h3 className="font-hand text-xl text-ochre-600">基础信息</h3>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-ink-700 mb-1.5">地点 *</label>
                 <input
@@ -116,14 +126,22 @@ export default function MemoryModal({ isOpen, onClose, onSubmit, editingData }: 
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-ink-700 mb-1.5">气味来源猜测</label>
-                <input
-                  type="text"
-                  value={form.source_guess}
-                  onChange={(e) => update('source_guess', e.target.value)}
-                  placeholder="例如：樟木 + 旧毛衣"
-                  className="scent-input"
+                <label className="block text-sm font-medium text-ink-700 mb-1.5">
+                  气味来源清单
+                </label>
+                <p className="text-xs text-ink-700/55 mb-2">
+                  最多 4 项，每项填写名称和 0–100 的把握，合计需为 100；星标可确认主来源
+                </p>
+                <SourceEditor
+                  sources={form.sources}
+                  onChange={(sources) => {
+                    setSourceError(null);
+                    update('sources', sources);
+                  }}
                 />
+                {sourceError && (
+                  <p className="mt-2 text-sm text-brick-500 font-medium">{sourceError}</p>
+                )}
               </div>
             </div>
           </div>

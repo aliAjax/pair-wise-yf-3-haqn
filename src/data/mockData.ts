@@ -1,13 +1,24 @@
 import type { SmellMemory } from '../utils/constants';
+import type { SourceItem } from '../utils/sources';
 
 const now = Date.now();
 const daysAgo = (d: number) => new Date(now - d * 86400000).toISOString();
+
+const src = (id: string, name: string, confidence: number, confirmed = false): SourceItem => ({
+  id,
+  name,
+  confidence,
+  ...(confirmed ? { confirmed: true } : {}),
+});
 
 export const mockMemories: SmellMemory[] = [
   {
     id: 'mock-001',
     location: '外婆家的老衣柜',
-    source_guess: '陈年樟木 + 旧毛衣',
+    sources: [
+      src('mock-001-s1', '陈年樟木', 65, true),
+      src('mock-001-s2', '旧毛衣', 35),
+    ],
     intensity: 7,
     humidity: 4,
     season: 'autumn',
@@ -22,7 +33,10 @@ export const mockMemories: SmellMemory[] = [
   {
     id: 'mock-002',
     location: '高中教室雨后的走廊',
-    source_guess: '湿润的水泥地 + 草地腥气',
+    sources: [
+      src('mock-002-s1', '湿润的水泥地', 55),
+      src('mock-002-s2', '草地腥气', 45),
+    ],
     intensity: 5,
     humidity: 9,
     season: 'summer',
@@ -37,7 +51,10 @@ export const mockMemories: SmellMemory[] = [
   {
     id: 'mock-003',
     location: '大学图书馆五楼角落',
-    source_guess: '旧纸张 + 某个人的香水',
+    sources: [
+      src('mock-003-s1', '旧纸张', 50),
+      src('mock-003-s2', '某个人的香水', 50),
+    ],
     intensity: 4,
     humidity: 6,
     season: 'winter',
@@ -52,7 +69,11 @@ export const mockMemories: SmellMemory[] = [
   {
     id: 'mock-004',
     location: '爷爷的中药铺',
-    source_guess: '甘草 + 陈皮 + 炮制过的草药',
+    sources: [
+      src('mock-004-s1', '甘草', 35),
+      src('mock-004-s2', '陈皮', 30),
+      src('mock-004-s3', '炮制过的草药', 35),
+    ],
     intensity: 9,
     humidity: 5,
     season: 'spring',
@@ -67,7 +88,10 @@ export const mockMemories: SmellMemory[] = [
   {
     id: 'mock-005',
     location: '第一次租的房子的厨房',
-    source_guess: '烧焦的米饭 + 抽油烟机的油污',
+    sources: [
+      src('mock-005-s1', '烧焦的米饭', 60),
+      src('mock-005-s2', '抽油烟机的油污', 40),
+    ],
     intensity: 8,
     humidity: 7,
     season: 'autumn',
@@ -82,7 +106,11 @@ export const mockMemories: SmellMemory[] = [
   {
     id: 'mock-006',
     location: '春天公园的樱花树下',
-    source_guess: '花瓣的甜味 + 青草 + 远处的棉花糖',
+    sources: [
+      src('mock-006-s1', '花瓣的甜味', 40),
+      src('mock-006-s2', '青草', 30),
+      src('mock-006-s3', '远处的棉花糖', 30),
+    ],
     intensity: 3,
     humidity: 5,
     season: 'spring',
@@ -97,7 +125,10 @@ export const mockMemories: SmellMemory[] = [
   {
     id: 'mock-007',
     location: '老小区的楼道',
-    source_guess: '谁家炖的红烧肉 + 消毒水',
+    sources: [
+      src('mock-007-s1', '谁家炖的红烧肉', 70),
+      src('mock-007-s2', '消毒水', 30),
+    ],
     intensity: 6,
     humidity: 6,
     season: 'winter',
@@ -112,7 +143,10 @@ export const mockMemories: SmellMemory[] = [
   {
     id: 'mock-008',
     location: '童年的海边',
-    source_guess: '咸腥海风 + 晒过的泳衣塑料味',
+    sources: [
+      src('mock-008-s1', '咸腥海风', 75),
+      src('mock-008-s2', '晒过的泳衣塑料味', 25),
+    ],
     intensity: 8,
     humidity: 10,
     season: 'summer',

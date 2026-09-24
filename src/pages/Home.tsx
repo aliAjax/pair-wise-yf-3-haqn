@@ -18,7 +18,7 @@ const defaultFilters: Filters = {
 };
 
 export default function Home() {
-  const { memories, initIfEmpty, addMemory, updateMemory, deleteMemory } = useMemoryStore();
+  const { memories, initIfEmpty, addMemory, updateMemory, deleteMemory, confirmSource } = useMemoryStore();
   const [filters, setFilters] = useState<Filters>(defaultFilters);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
@@ -41,12 +41,15 @@ export default function Home() {
   const openAddModal = () => { setEditing(null); setModalOpen(true); };
   const openEditModal = (m: SmellMemory) => { setEditing(m); setModalOpen(true); };
 
-  const handleSubmit = (data: MemoryInput) => {
+  const handleSubmit = (data: MemoryInput): boolean => {
     if (editing) {
-      updateMemory(editing.id, data);
-    } else {
-      addMemory(data);
+      return updateMemory(editing.id, data);
     }
+    return addMemory(data);
+  };
+
+  const handleConfirmSource = (memoryId: string, sourceId: string | null) => {
+    confirmSource(memoryId, sourceId);
   };
 
   const handleDelete = (id: string) => {
@@ -126,6 +129,7 @@ export default function Home() {
                     onToggle={() => setExpandedId(expandedId === m.id ? null : m.id)}
                     onEdit={() => openEditModal(m)}
                     onDelete={() => handleDelete(m.id)}
+                    onConfirmSource={(sourceId) => handleConfirmSource(m.id, sourceId)}
                   />
                 </div>
               ))}

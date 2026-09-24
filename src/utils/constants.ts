@@ -1,3 +1,5 @@
+import type { SourceItem } from './sources';
+
 export type Season = 'spring' | 'summer' | 'autumn' | 'winter';
 export type SmellType = 'woody' | 'floral' | 'fruity' | 'earthy' | 'spicy' | 'sweet' | 'musty' | 'fresh' | 'burnt' | 'other';
 export type Emotion = 'warm' | 'nostalgic' | 'peaceful' | 'melancholy' | 'joyful' | 'uncomfortable' | 'surprising';
@@ -5,7 +7,7 @@ export type Emotion = 'warm' | 'nostalgic' | 'peaceful' | 'melancholy' | 'joyful
 export interface SmellMemory {
   id: string;
   location: string;
-  source_guess: string;
+  sources: SourceItem[];
   intensity: number;
   humidity: number;
   season: Season;
